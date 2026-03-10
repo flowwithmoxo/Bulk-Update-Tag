@@ -87,18 +87,18 @@ export default function UploadForm() {
   }
 
   return (
-    <div className="mt-8">
-      <div className="mb-6 flex flex-wrap gap-3">
+    <div className="mt-10">
+      <div className="mb-8 flex flex-wrap gap-4">
         <a
           href="/api/sample-csv"
-          className="inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="inline-flex rounded-moxo border border-moxo-border px-5 py-2.5 text-sm font-medium text-moxo-heading hover:bg-[#F9F8F8] transition-colors"
         >
           Download Sample CSV
         </a>
 
         <a
           href="/api/sample-excel"
-          className="inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="inline-flex rounded-moxo border border-moxo-border px-5 py-2.5 text-sm font-medium text-moxo-heading hover:bg-[#F9F8F8] transition-colors"
         >
           Download Sample Excel
         </a>
@@ -106,10 +106,10 @@ export default function UploadForm() {
 
       <form
         onSubmit={handleSubmit}
-        className="rounded-xl border border-slate-200 bg-slate-50 p-6"
+        className="rounded-moxo border border-moxo-border bg-[#FCFAFA] p-8 shadow-sm"
       >
-        <label htmlFor="file-upload" className="mb-3 block text-sm font-medium">
-          Upload CSV or Excel file
+        <label htmlFor="file-upload" className="mb-4 block text-sm font-medium text-moxo-heading">
+          Select CSV or Excel file to upload
         </label>
 
         <input
@@ -118,7 +118,7 @@ export default function UploadForm() {
           accept=".csv,.xlsx"
           onChange={handleFileChange}
           disabled={loading}
-          className="block w-full text-sm"
+          className="block w-full text-sm text-moxo-body file:mr-5 file:py-2.5 file:px-5 file:rounded-moxo file:border-0 file:text-sm file:font-medium file:bg-[#EAE8E6] file:text-moxo-heading hover:file:bg-[#DFDDDB] hover:file:cursor-pointer transition-colors"
         />
 
         {file ? (
@@ -130,19 +130,19 @@ export default function UploadForm() {
         <button
           type="submit"
           disabled={loading || !file}
-          className="mt-4 inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-6 inline-flex rounded-moxo bg-moxo-btn px-6 py-2.5 text-sm font-medium text-white hover:bg-moxo-btn-hover transition-colors disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? "Processing..." : "Submit"}
         </button>
       </form>
 
-      {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="mt-5 text-sm text-rose-600 font-medium">{error}</p> : null}
 
       {summary ? (
-        <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4 text-sm">
-          <p><strong>Total:</strong> {summary.total}</p>
-          <p><strong>Success:</strong> {summary.successCount}</p>
-          <p><strong>Failed:</strong> {summary.failureCount}</p>
+        <div className="mt-8 rounded-moxo border border-moxo-border bg-white p-6 shadow-sm text-sm text-moxo-body">
+          <p className="mb-1"><strong className="text-moxo-heading">Total Processed:</strong> {summary.total}</p>
+          <p className="mb-1"><strong className="text-moxo-heading">Success:</strong> <span className="text-emerald-600 font-medium">{summary.successCount}</span></p>
+          <p><strong className="text-moxo-heading">Failed:</strong> <span className="text-rose-600 font-medium">{summary.failureCount}</span></p>
         </div>
       ) : null}
 
