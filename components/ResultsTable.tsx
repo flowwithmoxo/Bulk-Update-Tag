@@ -55,16 +55,19 @@ export default function ResultsTable({ results }: { results: UpdateResult[] }) {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="bg-[#FAFAF9]">
-                <th className="border-b border-moxo-border px-5 py-3 text-left text-xs font-semibold text-moxo-body uppercase tracking-wider">
-                  Workspace ID
+                <th className="border-b border-moxo-border px-4 py-3 text-left text-xs font-semibold text-moxo-body uppercase tracking-wider w-16">
+                  Row
                 </th>
-                <th className="border-b border-moxo-border px-5 py-3 text-left text-xs font-semibold text-moxo-body uppercase tracking-wider">
-                  Workspace Name
+                <th className="border-b border-moxo-border px-4 py-3 text-left text-xs font-semibold text-moxo-body uppercase tracking-wider">
+                  Binder ID
                 </th>
-                <th className="border-b border-moxo-border px-5 py-3 text-left text-xs font-semibold text-moxo-body uppercase tracking-wider">
+                <th className="border-b border-moxo-border px-4 py-3 text-left text-xs font-semibold text-moxo-body uppercase tracking-wider">
+                  Tags
+                </th>
+                <th className="border-b border-moxo-border px-4 py-3 text-left text-xs font-semibold text-moxo-body uppercase tracking-wider w-24">
                   Status
                 </th>
-                <th className="border-b border-moxo-border px-5 py-3 text-left text-xs font-semibold text-moxo-body uppercase tracking-wider">
+                <th className="border-b border-moxo-border px-4 py-3 text-left text-xs font-semibold text-moxo-body uppercase tracking-wider">
                   Message
                 </th>
               </tr>
@@ -72,24 +75,46 @@ export default function ResultsTable({ results }: { results: UpdateResult[] }) {
             <tbody className="divide-y divide-moxo-border-light">
               {filtered.map((result, index) => (
                 <tr
-                  key={`${result.workspaceId}-${index}`}
+                  key={`${result.binderId}-${result.rowNumber}-${index}`}
                   className="group hover:bg-moxo-bg/50 transition-colors duration-150"
-                  style={{ animationDelay: `${index * 30}ms` }}
                 >
-                  <td className="px-5 py-3.5 text-moxo-heading font-medium whitespace-nowrap">
+                  <td className="px-4 py-3 text-moxo-body-light text-xs tabular-nums">
+                    {result.rowNumber}
+                  </td>
+                  <td className="px-4 py-3 text-moxo-heading font-medium whitespace-nowrap">
                     <code className="text-xs bg-moxo-bg px-2 py-0.5 rounded font-mono text-moxo-body">
-                      {result.workspaceId}
+                      {result.binderId}
                     </code>
                   </td>
-                  <td className="px-5 py-3.5 text-moxo-body">
-                    {result.workspaceName || (
-                      <span className="text-moxo-body-light">—</span>
+                  <td className="px-4 py-3">
+                    {result.tags.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {result.tags.map((tag, tagIdx) => (
+                          <span
+                            key={`${tag.name}-${tagIdx}`}
+                            className="inline-flex items-center rounded bg-moxo-bg px-2 py-0.5 text-2xs text-moxo-body border border-moxo-border-light"
+                            title={`${tag.name}: ${tag.value || "(empty)"}`}
+                          >
+                            <span className="font-medium text-moxo-heading">{tag.name}</span>
+                            {tag.value ? (
+                              <>
+                                <span className="mx-1 text-moxo-body-light">:</span>
+                                <span>{tag.value}</span>
+                              </>
+                            ) : (
+                              <span className="ml-1 text-moxo-body-light italic">(clear)</span>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-moxo-body-light">—</span>
                     )}
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-4 py-3">
                     <StatusBadge success={result.success} />
                   </td>
-                  <td className="px-5 py-3.5 text-moxo-body text-xs max-w-xs truncate">
+                  <td className="px-4 py-3 text-moxo-body text-xs max-w-sm">
                     {result.message}
                   </td>
                 </tr>
@@ -108,7 +133,7 @@ export default function ResultsTable({ results }: { results: UpdateResult[] }) {
         {/* ─── Table footer ─── */}
         <div className="border-t border-moxo-border bg-[#FAFAF9] px-5 py-3 flex items-center justify-between text-xs text-moxo-body-light">
           <span>
-            Showing {filtered.length} of {results.length} results
+            Showing {filtered.length} of {results.length} rows
           </span>
           <span>
             {successCount} succeeded · {failCount} failed

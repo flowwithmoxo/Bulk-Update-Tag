@@ -1,7 +1,13 @@
-import { extractTags, parseCsvText, validateRows } from "@/lib/csv";
-import { delay, getAccessToken, updateWorkspaceTags } from "@/lib/moxo";
+import {
+  extractTags,
+  parseCsvText,
+  parseExcelFile,
+  getHeaders,
+  hasTagColumns,
+  cleanValue,
+} from "@/lib/csv";
+import { delay, getAccessToken, validateBinder, updateWorkspaceTags } from "@/lib/moxo";
 import { UpdateResult } from "@/lib/types";
-import { parseExcelFile } from "@/lib/csv";
 
 const REQUEST_DELAY_MS = Number(process.env.REQUEST_DELAY_MS || "500");
 
@@ -11,53 +17,99 @@ export async function POST(request: Request) {
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
-      return Response.json({ error: "CSV file is required." }, { status: 400 });
+      return Response.json({ error: "A CSV or Excel file is required." }, { status: 400 });
     }
 
-let rows;
+    // ─── Parse rows ───
+    let rows;
+    if (file.name.endsWith(".xlsx")) {
+      const buffer = await file.arrayBuffer();
+      rows = parseExcelFile(buffer);
+    } else {
+      const text = await file.text();
+      rows = parseCsvText(text);
+    }
 
-if (file.name.endsWith(".xlsx")) {
-  const buffer = await file.arrayBuffer();
-  rows = parseExcelFile(buffer);
-} else {
-  const text = await file.text();
-  rows = parseCsvText(text);
-}
-    validateRows(rows);
+    if (!rows.length) {
+      return Response.json({ error: "The uploaded file is empty." }, { status: 400 });
+    }
 
+    // ─── Check if tag columns exist in the template ───
+    const headers = getHeaders(rows[0]);
+    const templateHasTags = hasTagColumns(headers);
+
+    // ─── Get access token once ───
     const accessToken = await getAccessToken();
+
+    // ─── Process each row independently ───
     const results: UpdateResult[] = [];
 
-    for (const row of rows) {
-      const workspaceId = row.workspace_id.trim();
-      const workspaceName = (row.workspace_name || row.workspace_id).trim();
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNumber = i + 2; // row 1 = header, data starts at row 2
+      const binderId = cleanValue(row.binder_id);
       const tags = extractTags(row);
 
-      if (!tags.length) {
+      // Step 1: Validate required field — binder_id
+      if (!binderId) {
         results.push({
-          workspaceId,
-          workspaceName,
+          rowNumber,
+          binderId: binderId || "(empty)",
+          tags,
           success: false,
-          message: "No valid workspace tags found in row.",
+          message: "Missing required field: binder_id",
         });
         continue;
       }
 
-      const result = await updateWorkspaceTags({
+      // Step 2: Validate tag fields exist in template
+      if (!templateHasTags) {
+        results.push({
+          rowNumber,
+          binderId,
+          tags,
+          success: false,
+          message: "Missing required tag fields",
+        });
+        continue;
+      }
+
+      // Step 3: Validate binder via GET /v1/flow/binders/{binder_id}
+      const validation = await validateBinder({ accessToken, binderId });
+      if (!validation.valid) {
+        results.push({
+          rowNumber,
+          binderId,
+          tags,
+          success: false,
+          message: validation.reason || "Invalid binder_id",
+        });
+        await delay(REQUEST_DELAY_MS);
+        continue;
+      }
+
+      // Step 4: Update tags
+      const updateResult = await updateWorkspaceTags({
         accessToken,
-        workspaceId,
-        workspaceName,
+        binderId,
         tags,
       });
 
-      results.push(result);
+      results.push({
+        rowNumber,
+        binderId,
+        tags,
+        success: updateResult.success,
+        message: updateResult.message,
+      });
+
       await delay(REQUEST_DELAY_MS);
     }
 
     return Response.json({
       total: results.length,
-      successCount: results.filter((item) => item.success).length,
-      failureCount: results.filter((item) => !item.success).length,
+      successCount: results.filter((r) => r.success).length,
+      failureCount: results.filter((r) => !r.success).length,
       results,
     });
   } catch (error) {

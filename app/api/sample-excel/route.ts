@@ -3,24 +3,21 @@ import * as XLSX from "xlsx";
 export async function GET() {
   const rows = [
     {
-      workspace_id: "abc123",
-      workspace_name: "Client Workspace",
+      binder_id: "abc123",
       workspace_tag_1_key: "Priority",
       workspace_tag_1_value: "High",
       workspace_tag_2_key: "Department",
       workspace_tag_2_value: "Insurance",
     },
     {
-      workspace_id: "def456",
-      workspace_name: "Finance Workspace",
+      binder_id: "def456",
       workspace_tag_1_key: "Priority",
       workspace_tag_1_value: "Medium",
       workspace_tag_2_key: "Department",
       workspace_tag_2_value: "Finance",
     },
     {
-      workspace_id: "ghi789",
-      workspace_name: "Operations Workspace",
+      binder_id: "ghi789",
       workspace_tag_1_key: "Priority",
       workspace_tag_1_value: "Low",
       workspace_tag_2_key: "Department",

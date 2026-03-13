@@ -2,11 +2,14 @@ import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { CsvRow, WorkspaceTag } from "./types";
 
-export function cleanValue(value: string | undefined) {
-  if (!value) return "";
-  return value.trim();
+export function cleanValue(value: string | undefined): string {
+  if (value === undefined || value === null) return "";
+  return String(value).trim();
 }
 
+/**
+ * Parse CSV text into rows.
+ */
 export function parseCsvText(text: string): CsvRow[] {
   const result = Papa.parse<CsvRow>(text, {
     header: true,
@@ -26,6 +29,9 @@ export function parseCsvText(text: string): CsvRow[] {
   return result.data;
 }
 
+/**
+ * Parse Excel file buffer into rows.
+ */
 export function parseExcelFile(buffer: ArrayBuffer): CsvRow[] {
   const workbook = XLSX.read(buffer, { type: "array" });
   const sheetName = workbook.SheetNames[0];
@@ -38,18 +44,28 @@ export function parseExcelFile(buffer: ArrayBuffer): CsvRow[] {
   return rows;
 }
 
-export function validateRows(rows: CsvRow[]): void {
-  if (!rows.length) {
-    throw new Error("CSV or Excel file is empty.");
-  }
-
-  rows.forEach((row, index) => {
-    if (!cleanValue(row.workspace_id)) {
-      throw new Error(`Row ${index + 2}: Missing workspace_id`);
-    }
-  });
+/**
+ * Check if the parsed file has any tag columns
+ * (workspace_tag_N_key / workspace_tag_N_value).
+ */
+export function hasTagColumns(headers: string[]): boolean {
+  return headers.some(
+    (h) => /^workspace_tag_\d+_key$/i.test(h) || /^workspace_tag_\d+_value$/i.test(h)
+  );
 }
 
+/**
+ * Get headers from a row object.
+ */
+export function getHeaders(row: CsvRow): string[] {
+  return Object.keys(row);
+}
+
+/**
+ * Extract tags from a single row.
+ * Empty tag values are allowed (treated as clearing the tag).
+ * Returns tags for any tag slot where a key is present.
+ */
 export function extractTags(row: CsvRow): WorkspaceTag[] {
   const tags: WorkspaceTag[] = [];
 
@@ -60,10 +76,11 @@ export function extractTags(row: CsvRow): WorkspaceTag[] {
     const rawKey = cleanValue(row[keyField]);
     const rawValue = cleanValue(row[valueField]);
 
+    // If the key is present, include the tag (even if value is empty)
     if (rawKey) {
       tags.push({
         name: rawKey,
-        value: rawValue,
+        value: rawValue, // empty string = clear/delete tag value
       });
     }
   }

@@ -1,8 +1,8 @@
 export async function GET() {
   const csv = [
-    "workspace_id,workspace_name,workspace_tag_1_key,workspace_tag_1_value,workspace_tag_2_key,workspace_tag_2_value",
-    "abc123,Client Workspace,priority,high,region,us",
-    "def456,Onboarding Workspace,status,active,owner_team,success",
+    "binder_id,workspace_tag_1_key,workspace_tag_1_value,workspace_tag_2_key,workspace_tag_2_value",
+    "abc123,priority,high,region,us",
+    "def456,status,active,owner_team,success",
   ].join("\n");
 
   return new Response(csv, {

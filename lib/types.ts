@@ -1,6 +1,5 @@
 export type CsvRow = {
-  workspace_id: string;
-  workspace_name?: string;
+  binder_id: string;
   [key: string]: string | undefined;
 };
 
@@ -10,8 +9,9 @@ export type WorkspaceTag = {
 };
 
 export type UpdateResult = {
-  workspaceId: string;
-  workspaceName?: string;
+  rowNumber: number;
+  binderId: string;
+  tags: WorkspaceTag[];
   success: boolean;
   message: string;
 };

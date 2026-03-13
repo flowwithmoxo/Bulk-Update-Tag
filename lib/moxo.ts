@@ -1,4 +1,4 @@
-import { UpdateResult, WorkspaceTag } from "./types";
+import { WorkspaceTag } from "./types";
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
@@ -18,6 +18,9 @@ function getConfig() {
   };
 }
 
+/**
+ * Get an access token from the Moxo OAuth API.
+ */
 export async function getAccessToken(): Promise<string> {
   const { baseUrl, orgId, clientId, clientSecret, email } = getConfig();
 
@@ -63,25 +66,84 @@ export async function getAccessToken(): Promise<string> {
   return accessToken;
 }
 
+/**
+ * Validate a binder exists using the Get Flow Workspace API.
+ * GET https://{{moxo_domain}}/v1/flow/binders/{{binder_id}}
+ * Uses Bearer token auth.
+ *
+ * Returns { valid: true } on success, or { valid: false, reason: "..." } on failure.
+ */
+export async function validateBinder(params: {
+  accessToken: string;
+  binderId: string;
+}): Promise<{ valid: boolean; reason?: string }> {
+  const { baseUrl } = getConfig();
+  const { accessToken, binderId } = params;
+
+  try {
+    const response = await fetch(
+      `${baseUrl}/v1/flow/binders/${binderId}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        cache: "no-store",
+      }
+    );
+
+    const rawText = await response.text();
+    console.log(`Validate binder ${binderId} status:`, response.status);
+    console.log(`Validate binder ${binderId} response:`, rawText);
+
+    let data: any = null;
+    try {
+      data = rawText ? JSON.parse(rawText) : null;
+    } catch {
+      data = rawText;
+    }
+
+    // Check for success response
+    if (response.ok && (data?.code === "RESPONSE_SUCCESS" || response.status === 200)) {
+      return { valid: true };
+    }
+
+    // Determine error reason
+    const reason =
+      data?.description ||
+      data?.message ||
+      (response.status === 404 ? "Workspace not found" : `Binder validation failed (status ${response.status})`);
+
+    return { valid: false, reason };
+  } catch (error) {
+    return {
+      valid: false,
+      reason: error instanceof Error ? error.message : "Binder validation failed",
+    };
+  }
+}
+
+/**
+ * Update workspace tags for a given binder.
+ */
 export async function updateWorkspaceTags(params: {
   accessToken: string;
-  workspaceId: string;
-  workspaceName: string;
+  binderId: string;
   tags: WorkspaceTag[];
-}): Promise<UpdateResult> {
+}): Promise<{ success: boolean; message: string }> {
   const { baseUrl, orgId } = getConfig();
-  const { accessToken, workspaceId, workspaceName, tags } = params;
+  const { accessToken, binderId, tags } = params;
 
   try {
     const payload = {
       workspace_tags: tags,
     };
 
-    console.log("Updating workspace:", workspaceId);
+    console.log("Updating binder:", binderId);
     console.log("Payload:", JSON.stringify(payload, null, 2));
 
     const response = await fetch(
-      `${baseUrl}/v1/${orgId}/binders/${workspaceId}?access_token=${encodeURIComponent(accessToken)}`,
+      `${baseUrl}/v1/${orgId}/binders/${binderId}?access_token=${encodeURIComponent(accessToken)}`,
       {
         method: "POST",
         headers: {
@@ -105,28 +167,22 @@ export async function updateWorkspaceTags(params: {
 
     if (!response.ok) {
       return {
-        workspaceId,
-        workspaceName,
         success: false,
         message:
           data?.description ||
           data?.message ||
-          `Request failed with status ${response.status}`,
+          `Tag update failed (status ${response.status})`,
       };
     }
 
     return {
-      workspaceId,
-      workspaceName,
       success: true,
-      message: "Updated successfully",
+      message: "Success",
     };
   } catch (error) {
     return {
-      workspaceId,
-      workspaceName,
       success: false,
-      message: error instanceof Error ? error.message : "Unknown error",
+      message: error instanceof Error ? error.message : "Tag update failed",
     };
   }
 }
