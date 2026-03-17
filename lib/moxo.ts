@@ -1,28 +1,10 @@
-import { WorkspaceTag } from "./types";
-
-function getRequiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
-}
-
-function getConfig() {
-  return {
-    baseUrl: getRequiredEnv("MOXO_BASE_URL"),
-    orgId: getRequiredEnv("MOXO_ORG_ID"),
-    clientId: getRequiredEnv("MOXO_CLIENT_ID"),
-    clientSecret: getRequiredEnv("MOXO_CLIENT_SECRET"),
-    email: getRequiredEnv("MOXO_EMAIL"),
-  };
-}
+import { WorkspaceTag, MoxoConfig } from "./types";
 
 /**
  * Get an access token from the Moxo OAuth API.
  */
-export async function getAccessToken(): Promise<string> {
-  const { baseUrl, orgId, clientId, clientSecret, email } = getConfig();
+export async function getAccessToken(config: MoxoConfig): Promise<string> {
+  const { baseUrl, orgId, clientId, clientSecret, email } = config;
 
   const response = await fetch(`${baseUrl}/v1/core/oauth/token`, {
     method: "POST",
@@ -69,16 +51,14 @@ export async function getAccessToken(): Promise<string> {
 /**
  * Validate a binder exists using the Get Flow Workspace API.
  * GET https://{{moxo_domain}}/v1/flow/binders/{{binder_id}}
- * Uses Bearer token auth.
- *
- * Returns { valid: true } on success, or { valid: false, reason: "..." } on failure.
  */
 export async function validateBinder(params: {
+  config: MoxoConfig;
   accessToken: string;
   binderId: string;
 }): Promise<{ valid: boolean; reason?: string }> {
-  const { baseUrl } = getConfig();
-  const { accessToken, binderId } = params;
+  const { config, accessToken, binderId } = params;
+  const { baseUrl } = config;
 
   try {
     const response = await fetch(
@@ -103,12 +83,10 @@ export async function validateBinder(params: {
       data = rawText;
     }
 
-    // Check for success response
     if (response.ok && (data?.code === "RESPONSE_SUCCESS" || response.status === 200)) {
       return { valid: true };
     }
 
-    // Determine error reason
     const reason =
       data?.description ||
       data?.message ||
@@ -127,12 +105,13 @@ export async function validateBinder(params: {
  * Update workspace tags for a given binder.
  */
 export async function updateWorkspaceTags(params: {
+  config: MoxoConfig;
   accessToken: string;
   binderId: string;
   tags: WorkspaceTag[];
 }): Promise<{ success: boolean; message: string }> {
-  const { baseUrl, orgId } = getConfig();
-  const { accessToken, binderId, tags } = params;
+  const { config, accessToken, binderId, tags } = params;
+  const { baseUrl, orgId } = config;
 
   try {
     const payload = {
@@ -140,7 +119,6 @@ export async function updateWorkspaceTags(params: {
     };
 
     console.log("Updating binder:", binderId);
-    console.log("Payload:", JSON.stringify(payload, null, 2));
 
     const response = await fetch(
       `${baseUrl}/v1/${orgId}/binders/${binderId}?access_token=${encodeURIComponent(accessToken)}`,
@@ -156,7 +134,6 @@ export async function updateWorkspaceTags(params: {
 
     const rawText = await response.text();
     console.log("Update status:", response.status);
-    console.log("Update response:", rawText);
 
     let data: any = null;
     try {

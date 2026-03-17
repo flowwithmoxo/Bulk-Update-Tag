@@ -7,7 +7,7 @@ import {
   cleanValue,
 } from "@/lib/csv";
 import { delay, getAccessToken, validateBinder, updateWorkspaceTags } from "@/lib/moxo";
-import { UpdateResult } from "@/lib/types";
+import { UpdateResult, MoxoConfig } from "@/lib/types";
 
 const REQUEST_DELAY_MS = Number(process.env.REQUEST_DELAY_MS || "500");
 
@@ -15,9 +15,21 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file");
+    const configStr = formData.get("config");
 
     if (!(file instanceof File)) {
       return Response.json({ error: "A CSV or Excel file is required." }, { status: 400 });
+    }
+
+    if (!configStr || typeof configStr !== "string") {
+      return Response.json({ error: "Moxo configuration is required." }, { status: 400 });
+    }
+
+    let config: MoxoConfig;
+    try {
+      config = JSON.parse(configStr);
+    } catch {
+      return Response.json({ error: "Invalid Moxo configuration format." }, { status: 400 });
     }
 
     // ─── Parse rows ───
@@ -39,18 +51,18 @@ export async function POST(request: Request) {
     const templateHasTags = hasTagColumns(headers);
 
     // ─── Get access token once ───
-    const accessToken = await getAccessToken();
+    const accessToken = await getAccessToken(config);
 
     // ─── Process each row independently ───
     const results: UpdateResult[] = [];
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      const rowNumber = i + 2; // row 1 = header, data starts at row 2
+      const rowNumber = i + 2; 
       const binderId = cleanValue(row.binder_id);
       const tags = extractTags(row);
 
-      // Step 1: Validate required field — binder_id
+      // Step 1: Validate required field
       if (!binderId) {
         results.push({
           rowNumber,
@@ -62,7 +74,7 @@ export async function POST(request: Request) {
         continue;
       }
 
-      // Step 2: Validate tag fields exist in template
+      // Step 2: Validate tag fields
       if (!templateHasTags) {
         results.push({
           rowNumber,
@@ -74,8 +86,8 @@ export async function POST(request: Request) {
         continue;
       }
 
-      // Step 3: Validate binder via GET /v1/flow/binders/{binder_id}
-      const validation = await validateBinder({ accessToken, binderId });
+      // Step 3: Validate binder
+      const validation = await validateBinder({ config, accessToken, binderId });
       if (!validation.valid) {
         results.push({
           rowNumber,
@@ -90,6 +102,7 @@ export async function POST(request: Request) {
 
       // Step 4: Update tags
       const updateResult = await updateWorkspaceTags({
+        config,
         accessToken,
         binderId,
         tags,

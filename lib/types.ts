@@ -22,3 +22,11 @@ export type UploadResponse = {
   failureCount: number;
   results: UpdateResult[];
 };
+
+export type MoxoConfig = {
+  baseUrl: string;
+  orgId: string;
+  clientId: string;
+  clientSecret: string;
+  email: string;
+};
