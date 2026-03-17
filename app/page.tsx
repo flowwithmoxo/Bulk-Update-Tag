@@ -51,9 +51,9 @@ export default function HomePage() {
       </header>
 
       {/* ─── Page Content ─── */}
-      <main className="max-w-5xl mx-auto px-6 md:px-10 py-10">
+      <main className="max-w-5xl mx-auto px-6 md:px-10 py-8">
         {/* Page header */}
-        <div className="mb-10 animate-fade-in">
+        <div className="mb-8 animate-fade-in">
           <h2 className="text-2xl md:text-3xl font-semibold text-moxo-heading tracking-tight">
             Workspace Tag Update
           </h2>
