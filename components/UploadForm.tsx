@@ -9,11 +9,11 @@ const MAX_FILE_SIZE_MB = 10;
 const STORAGE_KEY = "moxo_portal_config";
 
 const DEFAULT_CONFIG: MoxoConfig = {
-  baseUrl: "https://pavan-demo.moxo.com",
-  orgId: "P9b66iIxC5pFNll05eo73yH",
-  clientId: "Njg3NmIxOWJ",
-  clientSecret: "OGM0NGNhY2J",
-  email: "pavan.prasad@moxo.com",
+  baseUrl: "",
+  orgId: "",
+  clientId: "",
+  clientSecret: "",
+  email: "",
 };
 
 export default function UploadForm() {
@@ -60,6 +60,15 @@ export default function UploadForm() {
     return "";
   }
 
+  function validateConfig(conf: MoxoConfig) {
+    if (!conf.baseUrl.trim()) return "Please enter the Moxo Base URL in Portal Settings.";
+    if (!conf.orgId.trim()) return "Please enter the Org ID in Portal Settings.";
+    if (!conf.clientId.trim()) return "Please enter the Client ID in Portal Settings.";
+    if (!conf.clientSecret.trim()) return "Please enter the Client Secret in Portal Settings.";
+    if (!conf.email.trim()) return "Please enter the Admin Email in Portal Settings.";
+    return "";
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -69,6 +78,13 @@ export default function UploadForm() {
     const validationError = validateFile(file);
     if (validationError) {
       setError(validationError);
+      return;
+    }
+
+    const configError = validateConfig(config);
+    if (configError) {
+      setError(configError);
+      setShowSettings(true); // Automatically show settings if they are missing
       return;
     }
 

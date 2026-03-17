@@ -78,15 +78,15 @@ export default function ResultsTable({ results }: { results: UpdateResult[] }) {
                   key={`${result.binderId}-${result.rowNumber}-${index}`}
                   className="group hover:bg-moxo-bg/50 transition-colors duration-150"
                 >
-                  <td className="px-4 py-3 text-moxo-body-light text-xs tabular-nums">
+                  <td className="px-4 py-3 text-moxo-body-light text-xs tabular-nums w-16">
                     {result.rowNumber}
                   </td>
-                  <td className="px-4 py-3 text-moxo-heading font-medium whitespace-nowrap">
+                  <td className="px-4 py-3 text-moxo-heading font-medium whitespace-nowrap min-w-[120px]">
                     <code className="text-xs bg-moxo-bg px-2 py-0.5 rounded font-mono text-moxo-body">
                       {result.binderId}
                     </code>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 min-w-[150px]">
                     {result.tags.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5">
                         {result.tags.map((tag, tagIdx) => (
@@ -111,10 +111,10 @@ export default function ResultsTable({ results }: { results: UpdateResult[] }) {
                       <span className="text-xs text-moxo-body-light">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 w-28">
                     <StatusBadge success={result.success} />
                   </td>
-                  <td className="px-4 py-3 text-moxo-body text-xs max-w-sm">
+                  <td className="px-4 py-3 text-moxo-body text-xs break-words min-w-[200px] leading-relaxed">
                     {result.message}
                   </td>
                 </tr>
